@@ -72,8 +72,12 @@ namespace limbo {
             template <typename StateFunction, typename AggregatorFunction, typename Opt>
             void operator()(const StateFunction& seval, const AggregatorFunction&, Opt& opt) const
             {
+                std::cout << "Random sampling "<< std::endl;
+                std::cout << "random sampling init " << Params::init_randomsampling::samples() << std::endl;
                 for (int i = 0; i < Params::init_randomsampling::samples(); i++) {
+                    
                     auto new_sample = tools::random_vector(StateFunction::dim_in(), Params::bayes_opt_bobase::bounded());
+                     std::cout << "eval and add" << std::endl;
                     opt.eval_and_add(seval, new_sample);
                 }
             }

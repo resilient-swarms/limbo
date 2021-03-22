@@ -65,7 +65,7 @@
 // we need everything to have the defaults
 #include <limbo/acqui/ucb.hpp>
 #include <limbo/init/random_sampling.hpp>
-#include <limbo/kernel/exp.hpp>
+//#include <limbo/kernel/exp.hpp>
 #include <limbo/mean/data.hpp>
 #include <limbo/model/gp.hpp>
 #include <limbo/stat/aggregated_observations.hpp>
@@ -73,6 +73,7 @@
 #include <limbo/stat/samples.hpp>
 #include <limbo/stop/chain_criteria.hpp>
 #include <limbo/stop/max_iterations.hpp>
+#include <limbo/stop/max_predicted_value.hpp>
 #include <limbo/tools/macros.hpp>
 #include <limbo/tools/math.hpp>
 #include <limbo/tools/sys.hpp>
@@ -187,7 +188,7 @@ namespace limbo {
                 // if you use a custom model
                 using acqui_t = acqui::UCB<Params, model_t>; // 3
                 using stat_t = boost::fusion::vector<stat::Samples<Params>, stat::AggregatedObservations<Params>, stat::ConsoleSummary<Params>>; // 4
-                using stop_t = boost::fusion::vector<stop::MaxIterations<Params>>; // 5
+                using stop_t = boost::fusion::vector<stop::MaxIterations<Params>>; // 5   , stop::MaxPredictedValue<Params>
             };
 
             // extract the types

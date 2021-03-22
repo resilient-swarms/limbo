@@ -66,7 +66,8 @@ namespace limbo {
 
             template <typename BO, typename AggregatorFunction>
             bool operator()(const BO& bo, const AggregatorFunction&)
-            {
+            {   
+                std::cout << "max iteration testing" << std::endl;
                 return bo.current_iteration() >= Params::stop_maxiterations::iterations();
             }
         };

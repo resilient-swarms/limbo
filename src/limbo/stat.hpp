@@ -62,5 +62,7 @@
 #include <limbo/stat/gp_prediction_differences.hpp>
 #include <limbo/stat/observations.hpp>
 #include <limbo/stat/samples.hpp>
+#include <limbo/stat/async_stats.hpp>
+#include <limbo/stat/async_stats_best.hpp>
 
 #endif

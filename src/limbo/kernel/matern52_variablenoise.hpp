@@ -43,21 +43,14 @@
 //| The fact that you are presently reading this means that you have had
 //| knowledge of the CeCILL-C license and that you accept its terms.
 //|
-#ifndef LIMBO_KERNEL_MATERN_FIVE_HALVES_HPP
-#define LIMBO_KERNEL_MATERN_FIVE_HALVES_HPP
+#ifndef LIMBO_KERNEL_MATERN_FIVE_HALVES_VARIABLENOISE_HPP
+#define LIMBO_KERNEL_MATERN_FIVE_HALVES_VARIABLENOISE_HPP
 
-#include <limbo/kernel/kernel.hpp>
-
-namespace limbo {
-    namespace defaults {
-        struct kernel_maternfivehalves {
-            /// @ingroup kernel_defaults
-            BO_PARAM(double, sigma_sq, 1);
-            /// @ingroup kernel_defaults
-            BO_PARAM(double, l, 1);
-        };
-    } // namespace defaults
-    namespace kernel {
+#include <limbo/kernel/kernel_variablenoise.hpp>
+namespace limbo
+{
+    namespace kernel
+    {
         /**
           @ingroup kernel
 
@@ -81,10 +74,11 @@ namespace limbo {
           \endrst
         */
         template <typename Params>
-        struct MaternFiveHalves : public BaseKernel<Params, MaternFiveHalves<Params>> {
-            MaternFiveHalves(size_t dim = 1) : _sf2(Params::kernel_maternfivehalves::sigma_sq()), _l(Params::kernel_maternfivehalves::l())
+        struct MaternFiveHalvesVariableNoise : public BaseKernelVariableNoise<Params, MaternFiveHalvesVariableNoise<Params>>
+        {
+            MaternFiveHalvesVariableNoise(size_t dim=1) : BaseKernelVariableNoise<Params, MaternFiveHalvesVariableNoise<Params>>(dim),_sf2(Params::kernel_maternfivehalves::sigma_sq()), _l(Params::kernel_maternfivehalves::l())
             {
-                std::cout << "Constructing matern five halves "<< std::endl;
+                std::cout << "Constructing matern five halves " << std::endl;
                 _h_params = Eigen::VectorXd(2);
                 _h_params << std::log(_l), std::log(std::sqrt(_sf2));
             }
@@ -95,14 +89,14 @@ namespace limbo {
             Eigen::VectorXd params() const { return _h_params; }
 
             // We expect the input parameters to be in log-space
-            void set_params(const Eigen::VectorXd& p)
+            void set_params(const Eigen::VectorXd &p)
             {
                 _h_params = p;
                 _l = std::exp(p(0));
                 _sf2 = std::exp(2.0 * p(1));
             }
 
-            double kernel(const Eigen::VectorXd& v1, const Eigen::VectorXd& v2) const
+            double kernel(const Eigen::VectorXd &v1, const Eigen::VectorXd &v2) const
             {
                 double d = (v1 - v2).norm();
                 double d_sq = d * d;
@@ -113,7 +107,7 @@ namespace limbo {
                 return _sf2 * (1 + term1 + term2) * std::exp(-term1);
             }
 
-            Eigen::VectorXd gradient(const Eigen::VectorXd& x1, const Eigen::VectorXd& x2) const
+            Eigen::VectorXd gradient(const Eigen::VectorXd &x1, const Eigen::VectorXd &x2) const
             {
                 Eigen::VectorXd grad(this->params_size());
 
@@ -132,7 +126,15 @@ namespace limbo {
 
                 return grad;
             }
-            void set_noise(std::vector<double> value) { }
+            double sf() const
+            {
+                return _sf2;
+            }
+            double l() const
+            {
+                return _l;
+            }
+            
         protected:
             double _sf2, _l;
 

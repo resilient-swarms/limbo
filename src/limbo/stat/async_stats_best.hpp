@@ -43,17 +43,34 @@
 //| The fact that you are presently reading this means that you have had
 //| knowledge of the CeCILL-C license and that you accept its terms.
 //|
-#ifndef LIMBO_ACQUI_HPP
-#define LIMBO_ACQUI_HPP
+#ifndef LIMBO_STAT_ASYNCSTAT_BEST_HPP
+#define LIMBO_STAT_ASYNCSTATS_BEST_HPP
 
-///@defgroup acqui
-///@defgroup acqui_defaults
+#include <limbo/stat/async_statbase.hpp>
 
-#include <limbo/acqui/ei.hpp>
-#include <limbo/acqui/gp_ucb.hpp>
-#include <limbo/acqui/ucb.hpp>
-#include <limbo/acqui/ucb_ID.hpp>
-#include <limbo/acqui/ucb_localpenalisation.hpp>
-#include <limbo/acqui/ucb_localpenalisation2.hpp>
-#include <limbo/acqui/ucb_localpenalisation3.hpp>
+namespace limbo
+{
+    namespace stat
+    {
+        ///@ingroup stat
+        ///filename: `samples.dat`
+        template <typename Params>
+        struct AsyncStatsBest : public AsyncStatBase<Params>
+        {
+            bool first_call = false;
+            template <typename BO, typename AggregatorFunction>
+            void operator()(const BO &bo, const AggregatorFunction &afun)
+            {
+                if (!bo.stats_enabled() || bo.samples().empty())
+                    return;
+                size_t worker_index = bo.current_worker_index();
+                size_t stat_index = bo.current_stat_index();
+                this->_create_log_file(bo, "async_stats_best" + std::to_string(stat_index) + ".dat", stat_index);
+
+                (*this->_log_file[stat_index]) << bo.times().back() << " " << bo.best_sample(worker_index, afun).transpose() << " " << bo.best_observation(worker_index, afun).transpose() << std::endl;
+            }
+        };
+    } // namespace stat
+} // namespace limbo
+
 #endif

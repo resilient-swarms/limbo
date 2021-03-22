@@ -43,57 +43,79 @@
 //| The fact that you are presently reading this means that you have had
 //| knowledge of the CeCILL-C license and that you accept its terms.
 //|
-#ifndef LIMBO_ACQUI_UCB_HPP
-#define LIMBO_ACQUI_UCB_HPP
+#ifndef LIMBO_ACQUI_UCB_LOCALPEN3_HPP
+#define LIMBO_ACQUI_UCB_LOCALPEN3_HPP
 
 #include <Eigen/Core>
 
 #include <limbo/opt/optimizer.hpp>
 #include <limbo/tools/macros.hpp>
+#include <src/ite/global.hpp>
 
-namespace limbo {
-    namespace defaults {
-        struct acqui_ucb {
-            /// @ingroup acqui_defaults
-            BO_PARAM(double, alpha, 0.5);
-        };
-    }
-    namespace acqui {
+namespace limbo
+{
+    namespace acqui
+    {
         /** @ingroup acqui
         \rst
-        Classic UCB (Upper Confidence Bound). See :cite:`brochu2010tutorial`, p. 14
 
-          .. math::
-            UCB(x) = \mu(x) + \alpha \sigma(x).
+        Alvi, A. S., Ru, B., Callies, J., Roberts, S. J., & Osborne, M. A. (2019). 
+        Asynchronous batch Bayesian optimisation with improved local penalisation. 
+        36th International Conference on Machine Learning, ICML 2019, 
+        2019-June, 373–387.
+
+
+        Contrary to version 2, this version 3 uses local lipschitz constants
 
         Parameters:
           - ``double alpha``
         \endrst
         */
         template <typename Params, typename Model>
-        class UCB {
+        class UCB_LocalPenalisation3 : public UCB_LocalPenalisation<Params,Model>
+        {
         public:
-            UCB(const Model& model, int iteration = 0) : _model(model) {std::cout << "construct UCB" << std::endl;}
+            size_t num_penalisations;
+            const double gamma = 1.5;
+            UCB_LocalPenalisation3(const Model &model, int iteration = 0) : UCB_LocalPenalisation<Params,Model>(model,iteration) {Params::LOCAL_L=true;};
 
-            size_t dim_in() const { return _model.dim_in(); }
-
-            size_t dim_out() const { return _model.dim_out(); }
-
-            template <typename AggregatorFunction>
-            opt::eval_t operator()(const Eigen::VectorXd& v, const AggregatorFunction& afun, bool gradient) const
+            virtual double local_penalisation(const Eigen::VectorXd &x) const
             {
-                //std::cout << "perform UCB" << std::endl;
-                assert(!gradient);
-                Eigen::VectorXd mu;
+                if (Params::busy_samples.empty())
+                {
+                    return 1.0;
+                }
+                double penalty = 1.0;
+                Eigen::VectorXd mu = Eigen::VectorXd(1);
                 double sigma;
-                std::tie(mu, sigma) = _model.query(v);
-                return opt::no_grad(afun(mu) + Params::acqui_ucb::alpha() * sqrt(sigma));
-            }
+                //std::ofstream log("ppenalisation_log2.txt",std::ios::app);
+                // std::cout << "checking penalty for sample " << x.transpose() << std::endl;
+                // std::cout << "local penalty:" << std::endl;
+                for (size_t i = 0; i < Params::busy_samples.size(); ++i)
+                {
+                    Eigen::VectorXd x0 = Params::busy_samples[i];
 
-        protected:
-            const Model& _model;
+                    double E_r = this->_hammer_function_precompute_r(x0, Params::M,Params::LL[i]);
+                    double s_x0 = this->_hammer_function_precompute_s(x0,Params::LL[i]);
+                    double norm = (x - x0).norm();
+                    double max_r = E_r + gamma * s_x0;
+                    double phi = std::min(norm/max_r,1.0);
+                    //log << x.transpose() << " " << x0.transpose() << " " << E_r << " " << s_x0 << " " << max_r << " " << phi << std::endl;
+                    if (phi < .001)
+                    {
+                        ++Params::count;
+                        
+                        std::cout << "number of strong penalisations " << Params::count << std::endl;
+                        std::cout <<"busy sample 1: "<< x0.transpose() << std::endl;
+                        std::cout <<"queried sample 1: "<< x.transpose() << std::endl;
+                    }
+                    penalty *= phi;
+                }
+                return penalty;
+            }
+            
         };
-    }
-}
+    } // namespace acqui
+} // namespace limbo
 
 #endif

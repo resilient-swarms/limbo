@@ -53,7 +53,10 @@ namespace limbo {
         template <typename Params>
         struct NoInit {
             template <typename StateFunction, typename AggregatorFunction, typename Opt>
-            void operator()(const StateFunction&, const AggregatorFunction&, Opt&) const {}
+            void operator()(const StateFunction&, const AggregatorFunction&, Opt&) const {
+
+                std::cout << "No init " << std::endl;
+            }
         };
     }
 }
